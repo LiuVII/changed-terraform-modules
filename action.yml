@@ -1,0 +1,47 @@
+name: Changed terrraform modules
+description: |
+  Provided concatenated list of directories find tf/tofu modules that changed or which dependencies have changed
+
+inputs:
+  changed_dirs:
+    description: |
+      String of changed directories that are split by 'separator', e.g. for '|' separator 'path1/to/dir1|path2/to/dir2'
+    required: true
+  root_module_dir_name:
+    description: |
+      Name of the folder where root modules are located, normally a general name across repo
+      that is used to distinguish root modules from shared modules.
+      In case multiple options for such folder exist use the one that's deeper,
+      e.g. for 'projects/[project_name]/environments/[env_name]' use 'environments'.
+    required: false
+    default: environments
+  separator:
+    description: Separator to use joining files to output changed modules string
+    required: false
+    default: '|'
+
+outputs:
+  any_changed:
+    description: True only when any modules or corresponding dependencies have changed and empty otherwise.
+    value: ${{ steps.get-changed-modules.outputs.any_changed }}
+  any_root_changed:
+    description: True only when any root modules or corresponding dependencies have changed and empty otherwise.
+    value: ${{ steps.get-changed-modules.outputs.any_root_changed }}
+  changed_modules:
+    description: JSON of all module paths that changed including changed_root_modules output.
+    value: ${{ steps.get-changed-modules.outputs.changed_modules }}
+  changed_root_modules:
+    description: JSON of all root module paths that changed or which dependencies have changed.
+    value: ${{ steps.get-changed-modules.outputs.changed_root_modules }}
+
+runs:
+  using: "composite"
+  steps:
+    - name: Find changed modules
+      id: get-changed-modules
+      shell: bash
+      run: bash ${{ github.action_path }}/command.sh
+      env:
+        ROOT_DIR_NAME: ${{ inputs.root_module_dir_name }}
+        CHANGED_DIRS_RAW: ${{ inputs.changed_dirs }}
+        SEPARATOR: ${{ inputs.separator }}
